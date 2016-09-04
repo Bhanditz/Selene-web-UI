@@ -1,0 +1,51 @@
+{
+  "name": "selene-web-ui",
+  "version": "0.0.0",
+  "description": "A simple browser-based UI for Selene systems",
+  "keywords": [
+    "arduino"
+  ],
+  "homepage": "https://github.com/Densaugeo/Selene-web-UI",
+  "bugs": "https://github.com/Densaugeo/Selene-web-UI/issues",
+  "license": "GPL-2.0+",
+  "author": "Densaugeo (http://www.madengineersworkshop.net/)",
+  "contributors": [],
+  "files": [
+    "http",
+    "LICENSE",
+    "package.json",
+    "README.md",
+    "server.js"
+  ],
+  "main": "server.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Densaugeo/Selene-web-UI.git"
+  },
+  "scripts": {
+    "build": "browserify http/libs.js > http/libs.pkgd.js",
+    "install": "npm run install-font-awesome && npm run install-hematite && npm run build",
+    "install-font-awesome": "rm -rf http/node_modules/font-awesome && mv node_modules/font-awesome http/node_modules",
+    "install-hematite": "rm -rf http/node_modules/hematite && mv node_modules/hematite http/node_modules",
+    "lint": "jshint *.js http/*.js"
+  },
+  "config": {},
+  "dependencies": {
+    "browserify": "^13.0.0",
+    "font-awesome": "^4.6.1",
+    "hematite": "git+https://git@github.com/Densaugeo/Hematite.git#2.1.0",
+    "mqtt": "~1.11.0",
+    "nconf": "~0.8.4",
+    "node-static": "~0.7.7",
+    "selene-packets": "git://github.com/Densaugeo/Selene-packets.git#0.1.1",
+    "skirnir": "git://github.com/Densaugeo/Skirnir.git#2.0.0",
+    "winston": "~2.2.0"
+  },
+  "devDependencies": {
+    "jshint": "^2.9.2"
+  },
+  "engines": {
+    "node": ">=4.0.0",
+    "npm": ">=2.14.7"
+  }
+}

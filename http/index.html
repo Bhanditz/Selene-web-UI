@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
+
+<title>Selene</title>
+
+<link rel="stylesheet" href="/node_modules/font-awesome/css/font-awesome.min.css">
+<link rel="stylesheet" href="/node_modules/hematite/Hematite-light.css" id="light_colors">
+<link rel="stylesheet" href="/node_modules/hematite/Hematite-dark.css" id="dark_colors">
+<link rel="stylesheet" href="/node_modules/hematite/Hematite.css">
+
+<style type='text/css'>
+.ht-panel {
+  position: relative;
+  top: 150px;
+  left: calc(50% - 132px);
+  width: 300px;
+  margin-bottom: 12px;
+}
+.ht-well {
+  position: absolute;
+  top: 20px;
+  left: calc(48px + 5%);
+  right: 5%;
+}
+se-panel.disconnected > .ht-panel-heading {
+  color: #444;
+}
+.se-panel > .description {
+}
+.se-pin {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.se-pin > .description {
+  position: relative;
+  display: inline;
+  height: 100%
+}
+.se-pin > input {
+  margin: 0;
+}
+</style>
+
+<script type="text/javascript">
+// Frame buster
+if(top !== self) {
+  top.location.replace(self.location.href);
+}
+</script>
+
+<script type="text/javascript" src="libs.pkgd.js"></script>
+</head>
+
+<body>
+
+<div id="ht-background">
+</div>
+
+<div class="ht-well">
+<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+</div>
+
+</body>
+
+<script type="text/javascript">
+
+///////////////
+// Utilities //
+///////////////
+
+// Daisy-chainable HTMLElement maker
+var fE = Hematite.forgeElement;
+
+///////////////
+// Instances //
+///////////////
+
+var sidebar = fE('ht-sidebar', {}, [
+  fE('ht-toggle' , {id: 'contrast'   , faClass    : 'fa-adjust'    , faClassAlt: 'fa-circle-o'  , description: 'Flip contrast'                      }),
+  fE('ht-instant', {id: 'clear'      , faClass    : 'fa-recycle'   ,                              description: 'Clear local storage'                })
+]);
+document.body.appendChild(sidebar);
+
+/**
+ * @module \<se-panel\> inherits \<ht-panel\>
+ * @description Represents a remote Selene device
+ */
+Hematite.elements['SE-PANEL'] = function(element) {
+  Hematite.elements['HT-PANEL'](element);
+  
+  element.classList.add('se-panel');
+  
+  var descriptionElement = element.appendChild(fE('div', { className: 'description' }));
+  element.appendChild(fE('hr'));
+  
+  Object.defineProperties(element, {
+    // @prop String name -- Alias for .headingText. Changes to 'Unnamed device' when blank
+    name: {
+      get: () => element.headingText,
+      set: v  => element.headingText = v ? v : 'Unnamed Device'
+    },
+    // @prop String desc -- Alias for .textContent of description div
+    desc: {
+      get: () => descriptionElement.textContent,
+      set: v  => descriptionElement.textContent = v
+    }
+  });
+  element.headingText = 'Unnamed Device'; // Default value
+  
+  // [\<se-pin\>] pins -- This device's pins
+  element.pins = [];
+  
+  // @prop Number|null min -- Default .min for pins on this device
+  element.min = null;
+  
+  // @prop Number|null max -- Default .max for pins on this device
+  element.max = null;
+  
+  // @method undefined addPin(Number index, Object properties) -- Creates a \<se-pin\> in .pins at index, attaches it at the appropriate place in the DOM, and copies the given properties to it
+  element.addPin = function(index, properties) {
+    // Figure out where the last pin is in the DOM tree
+    var previousNode = element.desc;
+    for(var i = index; i >= 0; --i) {
+      if(element.pins[i]) {
+        previousNode = element.pins[i];
+        break;
+      }
+    }
+    
+    properties.index = index;
+    
+    if(properties.name === undefined) {
+      properties.name = 'Pin ' + index;
+    }
+    
+    if(properties.min === undefined && element.min !== null) {
+      properties.min = element.min;
+    }
+    
+    if(properties.max === undefined && element.max !== null) {
+      properties.max = element.max;
+    }
+    
+    element.pins[index] = element.insertBefore(fE('se-pin', properties), previousNode.nextSibling);
+  }
+}
+
+/**
+ * @module \<se-pin\> inherits HTMLUnknownElement
+ * @description Represents a pin on a remote Selene device
+ */
+Hematite.elements['SE-PIN'] = function(element) {
+  // @prop String className -- Defaults to 'se-pin'
+  element.className = 'se-pin';
+  
+  var div = element.appendChild(fE('div', { className: 'description', textContent: ':' }));
+  var input = element.appendChild(fE('input', { type: 'range', min: 0, max: 1, step: 1, value: 0 }));
+  
+  var index = 0;
+  var desc = '';
+  
+  Object.defineProperties(element, {
+    // @prop Number index -- Setting .index updates .title
+    index: {
+      get: () => index,
+      set: v  => updateTitle(index = v)
+    },
+    // @prop String value -- Alias for .value of input element
+    value: {
+      get: () => input.value,
+      set: v  => input.value = v
+    },
+    // @prop String name -- Alias for .value of description div (also appends ':')
+    name: {
+      get: () => div.textContent,
+      set: v  => div.textContent = v + ':'
+    },
+    // @prop String desc -- Alias for .title of description div
+    desc: {
+      get: () => desc,
+      set: v  => updateTitle(desc = v)
+    },
+    // @prop String min -- Alias for .min of input element
+    min: {
+      get: () => input.min,
+      set: v  => input.min = v
+    },
+    // @prop String max -- Alias for .max of input element
+    max: {
+      get: () => input.max,
+      set: v  => input.max = v
+    }
+  });
+  
+  var updateTitle = function() {
+    div.title = 'Pin ' + index + (desc ? ' - ' : '') + desc;
+  }
+}
+
+var panels = [];
+
+var darkColors = document.getElementById('dark_colors');
+
+//////////
+// MQTT //
+//////////
+
+/**
+ * @module mqtt_to_server
+ */
+var mqtt_to_server = mqtt.connect(window.location.protocol.replace('http', 'ws') + '//' + window.location.hostname + ':8883');
+
+var subscriptions = ['Se/+/devinfo'];
+
+mqtt_to_server.on('connect', function() {
+  subscriptions.forEach(function(v) {
+    mqtt_to_server.subscribe(v);
+  });
+});
+
+mqtt_to_server.on('message', function(topic, message) {
+  var event = SeleneParser.Packet.fromMqtt(topic, message);
+  
+  mqtt_to_server.emit(event.type, event);
+});
+
+mqtt_to_server.subscribeAndSave = function(topic) {
+  subscriptions.push(topic);
+  mqtt_to_server.subscribe(topic);
+};
+
+mqtt_to_server.cache = {};
+
+setInterval(function() {
+  for(var i in mqtt_to_server.cache) {
+    mqtt_to_server.publish(i, mqtt_to_server.cache[i]);
+    
+    delete mqtt_to_server.cache[i];
+  }
+}, 100);
+
+////////////
+// Events //
+////////////
+
+mqtt_to_server.on('devinfo', function(e) {
+  var info = JSON.parse(e.value);
+  
+  if(panels[e.address]) {
+    for(var i in info) {
+      panels[e.address][i] = info[i];
+    }
+  } else {
+    panels[e.address] = fE('se-panel', info);
+    document.body.appendChild(panels[e.address]);
+    
+    mqtt_to_server.subscribeAndSave('Se/' + e.address + '/connection');
+    mqtt_to_server.subscribeAndSave('Se/' + e.address + '/pininfo/+');
+  }
+});
+
+mqtt_to_server.on('connection', function(e) {
+  if(e.value) {
+    panels[e.address].classList.remove('disconnected');
+  } else {
+    panels[e.address].classList.add('disconnected');
+  }
+});
+
+mqtt_to_server.on('pin', function(e) {
+  panels[e.address].pins[e.pin].value = e.value;
+});
+
+mqtt_to_server.on('pininfo', function(e) {
+  var info = JSON.parse(e.value);
+  
+  if(panels[e.address].pins[e.pin]) {
+    for(var i in info) {
+      panels[e.address].pins[e.pin][i] = info[i];
+    }
+  } else {
+    panels[e.address].addPin(e.pin, info);
+    
+    panels[e.address].pins[e.pin].addEventListener('input', f => {
+      var mqtt_message = new SeleneParser.Packet(e.address, 'pin', e.pin, f.target.value, true).toMqtt();
+      mqtt_to_server.cache[mqtt_message.topic] = mqtt_message.message;
+    });
+    
+    mqtt_to_server.subscribeAndSave('Se/' + e.address + '/pin/' + e.pin);
+  }
+});
+
+document.querySelector('#contrast').addEventListener('toggleon', function(e) {
+  document.head.removeChild(darkColors);
+  localStorage.contrast = 'light';
+});
+
+document.querySelector('#contrast').addEventListener('toggleoff', function(e) {
+  document.head.appendChild(darkColors);
+  localStorage.contrast = 'dark';
+});
+
+document.querySelector('#clear').addEventListener('trigger', function() {
+  localStorage.clear();
+});
+
+////////////////////
+// Initialization //
+////////////////////
+
+if(localStorage.contrast === 'light') {
+  document.head.removeChild(darkColors);
+}
+</script>
+</html>
