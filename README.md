@@ -1,4 +1,4 @@
-# Selene
+# Selene-web-UI
 
 A simple browser-based UI for Selene systems.
 
